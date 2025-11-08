@@ -89,3 +89,21 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Get process information
+int
+sys_getprocs(void)
+{
+  struct procinfo *pinfo;
+  int max;
+  
+  // 1. Get max count (arg 1) FIRST - so we can use it for validation
+  if(argint(1, &max) < 0)
+    return -1;
+    
+  // 2. Get pointer (arg 0) and validate its size using max
+  if(argptr(0, (void*)&pinfo, max * sizeof(struct procinfo)) < 0)
+    return -1;
+    
+  return getprocs(pinfo, max);
+}

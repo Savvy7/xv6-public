@@ -54,6 +54,10 @@ trap(struct trapframe *tf)
       wakeup(&ticks);
       release(&tickslock);
     }
+    // Track CPU time for the currently running process
+    if(myproc() != 0 && myproc()->state == RUNNING){
+      myproc()->cpu_ticks++;
+    }
     lapiceoi();
     break;
   case T_IRQ0 + IRQ_IDE:

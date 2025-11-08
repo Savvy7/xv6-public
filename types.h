@@ -9,4 +9,5 @@ struct procinfo {
   int state;         // Process state (enum procstate value)
   uint sz;           // Size of process memory (bytes)
   char name[16];     // Process name
+  uint cpu_ticks;    // Total CPU ticks used by this process
 };

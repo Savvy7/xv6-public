@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->cpu_ticks = 0;  // Initialize CPU ticks
 
   release(&ptable.lock);
 
@@ -531,4 +532,39 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+// Get process information for user space
+// Returns number of processes found, or -1 on error
+int
+getprocs(struct procinfo *pinfo, int max)
+{
+  struct proc *p;
+  int i = 0;
+  struct procinfo k_table[NPROC];  // Kernel-space buffer
+
+  // Validate parameters
+  if(max <= 0 || max > NPROC)
+    return -1;
+
+  // Safely populate the kernel buffer while holding the lock
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC] && i < max; p++){
+    if(p->state == UNUSED)
+      continue;
+    
+    k_table[i].pid = p->pid;
+    k_table[i].state = p->state;
+    k_table[i].sz = p->sz;
+    memmove(k_table[i].name, p->name, 16);
+    k_table[i].cpu_ticks = p->cpu_ticks;  // Copy CPU ticks
+    i++;
+  }
+  release(&ptable.lock);
+
+  // Safely copy from kernel space to user space
+  if(copyout(myproc()->pgdir, (uint)pinfo, k_table, i * sizeof(struct procinfo)) < 0)
+    return -1;
+  
+  return i;  // Return number of processes found
 }
